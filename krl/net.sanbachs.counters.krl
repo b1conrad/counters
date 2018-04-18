@@ -3,18 +3,25 @@ ruleset net.sanbachs.counters {
     shares __testing, number
   }
   global {
-    __testing = { "queries": [ { "name": "__testing" },
-                               { "name": "number", "args": [ "n" ] } ],
+    __testing = { "queries": [ { "name": "__testing" } ],
                   "events": [ ] }
-    h = function(len) {
+    // header fragments given width and colors
+    h = function(len,color,bgcolor) {
+      c = color => color | [0,0,0];
+      b = bgcolor => bgcolor | [255,255,255];
       "GIF89a".split(re##).map(function(v){v.ord()})
               .append([len*10])
-              .append([0,20,0,128,0,1,0,0,0,255,255,255])
+              .append([0,20,0,128,0,1])
+              .append(c)
+              .append(b)
     };
+    // separator fragment
     S = [",".ord()];
+    // position fragments
     p = function(pos) {
       [pos*10]
     };
+    // digit fragments
     D0 = [0,0,0,10,0,20,0,0,8,47,0,3,8,28,72,176,160,193,131,8,19,42,92,200,176,161,64,0,16,1,20,148,56,144,226,67,130,22,3,100,220,136,177,99,69,143,23,63,138,12,73,242,97,196,134,1,255,0];
     D1 = [0,0,0,10,0,20,0,0,8,44,0,3,8,28,72,176,160,193,131,8,19,42,92,200,176,225,64,0,0,12,66,12,16,17,97,197,131,23,37,38,204,88,144,35,65,143,15,37,66,28,9,146,96,192,0];
     D2 = [0,0,0,10,0,20,0,0,8,45,0,3,8,28,72,176,160,193,131,8,19,42,92,200,176,161,64,0,16,33,18,4,80,144,226,195,138,9,45,26,212,56,145,227,64,143,31,17,122,212,24,177,228,194,128,0];
@@ -26,12 +33,25 @@ ruleset net.sanbachs.counters {
     D8 = [0,0,0,10,0,20,0,0,8,48,0,3,8,28,72,176,160,193,131,8,19,42,92,200,176,161,64,0,16,1,20,148,56,144,226,67,130,22,3,100,204,168,49,226,68,140,32,43,134,188,40,178,100,69,143,12,3,254,0];
     D9 = [0,0,0,10,0,20,0,0,8,48,0,3,8,28,72,176,160,193,131,8,19,42,92,200,176,161,64,0,16,1,20,148,56,144,226,67,130,22,3,100,220,88,49,163,70,136,26,19,122,172,136,112,100,68,135,1,2,254,0];
     D = [D0,D1,D2,D3,D4,D5,D6,D7,D8,D9];
+    // terminator fragment
     T = [";".ord()];
-    flt = function(a,v){a.append(v)};
-    dgt = function(v,k) {S.append(p(k)).append(D[v])};
-    number = function(n) {
+
+    flt = function(a,v){a.append(v)};                   // flatten
+    dgt = function(v,k) {S.append(p(k)).append(D[v])};  // digit fragment
+    oct = function(v) {0 <= v && v <= 255};             // valid octet
+    val = function(color) {                             // validate color triplet
+      c_val = color.decode();
+      c_ok = color && c_val.typeof()=="Array"
+                   && c_val.length()==3
+                   && c_val.filter(oct).length()==3;
+      c_ok => c_val | null
+    }
+    // /sky/cloud/<ECI>/<RID>/number.gif?n=999&color=[R,G,B]&bgcolor=[R,G,B]
+    number = function(n,color,bgcolor) {
       num = n.as("String");
-      h(num.length()).append(num.split(re##).map(dgt).reduce(flt,[])).append(T)
+      h(num.length(),val(color),val(bgcolor))
+        .append(num.split(re##).map(dgt).reduce(flt,[]))
+        .append(T)
     }
   }
 }
