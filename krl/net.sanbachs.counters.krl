@@ -48,9 +48,10 @@ ruleset net.sanbachs.counters {
     }
     // /sky/cloud/<ECI>/<RID>/number.gif?n=999&color=[R,G,B]&bgcolor=[R,G,B]
     number = function(n,color,bgcolor) {
-      num = n.as("String");
-      h(num.length(),val(color),val(bgcolor))
-        .append(num.split(re##).map(dgt).reduce(flt,[]))
+      num = n.as("String").extract(re#(\d)#g).join("");
+      num_len = num.length() <= 25 => num.length() | 25;
+      h(num_len,val(color),val(bgcolor))
+        .append(num.substr(0,num_len).split(re##).map(dgt).reduce(flt,[]))
         .append(T)
     }
   }
