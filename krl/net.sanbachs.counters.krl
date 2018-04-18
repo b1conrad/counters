@@ -1,4 +1,4 @@
-ruleset net.sanbachs.counters.fragments {
+ruleset net.sanbachs.counters {
   meta {
     shares __testing, number
   }
