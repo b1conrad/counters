@@ -5,10 +5,18 @@ ruleset net.sanbachs.counters {
   global {
     __testing = { "queries": [ { "name": "__testing" } ],
                   "events": [ ] }
+    oct = function(v) {0 <= v && v <= 255};             // valid octet
+    val = function(color) {                             // validate color triplet
+      c_val = color.decode();
+      c_ok = color && c_val.typeof()=="Array"
+                   && c_val.length()==3
+                   && c_val.filter(oct).length()==3;
+      c_ok => c_val | null
+    }
     // header fragments given width and colors
     h = function(len,color,bgcolor) {
-      c = color => color | [0,0,0];
-      b = bgcolor => bgcolor | [255,255,255];
+      c = val(color).defaultsTo([0,0,0]);
+      b = val(bgcolor).defaultsTo([255,255,255]);
       "GIF89a".split(re##).map(function(v){v.ord()})
               .append([len*10])
               .append([0,20,0,128,0,1])
@@ -38,19 +46,11 @@ ruleset net.sanbachs.counters {
 
     flt = function(a,v){a.append(v)};                   // flatten
     dgt = function(v,k) {S.append(p(k)).append(D[v])};  // digit fragment
-    oct = function(v) {0 <= v && v <= 255};             // valid octet
-    val = function(color) {                             // validate color triplet
-      c_val = color.decode();
-      c_ok = color && c_val.typeof()=="Array"
-                   && c_val.length()==3
-                   && c_val.filter(oct).length()==3;
-      c_ok => c_val | null
-    }
     // /sky/cloud/<ECI>/<RID>/number.gif?n=999&color=[R,G,B]&bgcolor=[R,G,B]
     number = function(n,color,bgcolor) {
       num = n.as("String").extract(re#(\d)#g).join("");
-      num_len = num.length() <= 25 => num.length() | 25;
-      h(num_len,val(color),val(bgcolor))
+      num_len = (num.length() <= 25) => num.length() | 25;
+      h(num_len,color,bgcolor)
         .append(num.substr(0,num_len).split(re##).map(dgt).reduce(flt,[]))
         .append(T)
     }
