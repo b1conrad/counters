@@ -4,7 +4,7 @@ ruleset net.sanbachs.counters {
   }
   global {
     __testing = { "queries": [ { "name": "__testing" } ],
-                  "events": [ ] }
+                  "events": [ {"domain": "counters", "type": "hit" } ] }
     oct = function(v) {0 <= v && v <= 255};             // valid octet
     val = function(color) {                             // validate color triplet
       c_val = color.decode();
@@ -53,6 +53,17 @@ ruleset net.sanbachs.counters {
       h(num_len,color,bgcolor)
         .append(num.substr(0,num_len).split(re##).map(dgt).reduce(flt,[]))
         .append(T)
+    }
+  }
+  rule increment_and_display_counter {
+    select when counters hit
+    pre {
+      new_count = ent:counter.defaultsTo(0) + 1;
+      image = number(new_count);
+    }
+    send_directive("_gif",{"content": image})
+    fired {
+      ent:counter := new_count;
     }
   }
 }
